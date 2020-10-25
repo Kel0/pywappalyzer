@@ -1,0 +1,12 @@
+kind: pipeline
+name: pywappalyzer
+
+steps:
+  - name: pywappalyzer-test
+    pull: if-not-exists
+    image: python:3.7
+    commands:
+      - pip install invoke
+      - inv install
+      - inv check
+      - inv test

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+PATH="{invoke_path}:$PATH"
+set -o errexit
+
+(set -x; invoke check > /dev/null 2>&1)
+(set -x; invoke test > /dev/null 2>&1)
+
+echo "Complete"
