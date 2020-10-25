@@ -1,1 +1,1 @@
-# pywappalyzer
+# pywappalyzer  [![Build Status](https://cloud.drone.io/api/badges/Kel0/pywappalyzer/status.svg)](https://cloud.drone.io/Kel0/pywappalyzer) [![BCH compliance](https://bettercodehub.com/edge/badge/Kel0/pywappalyzer?branch=main)](https://bettercodehub.com/)
