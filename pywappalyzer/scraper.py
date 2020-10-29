@@ -15,7 +15,7 @@ HEADERS = {
     ),
 }
 
-FILE_PATH = Path(__file__).parent
+FILE_PATH = Path(__file__).parent.absolute()
 
 
 def write_json(filename: str, data: dict) -> None:
