@@ -1,1 +1,2 @@
 include pywappalyzer/db/technologies.json
+include pywappalyzer/db/categories.json

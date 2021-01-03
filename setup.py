@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pywappalyzer",
-    version="0.0.4",
+    version="0.1.0",
     author="Kel0",
     author_email="rozovdima123@gmail.com",
-    description="Easy identify site's IT technologies",
+    description="Easy identify site's technologies.json",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Kel0/pywappalyzer",
@@ -19,5 +19,14 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
+    install_requires=[
+        "geckodriver-autoinstaller",
+        "lxml",
+        "selenium",
+        "requests",
+        "requests-toolbelt",
+        "lxml",
+        "beautifulsoup4"
+    ]
 )
