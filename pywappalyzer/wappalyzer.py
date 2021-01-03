@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -39,6 +39,27 @@ class Pywappalyzer:
         )
 
         return processor.analyze()
+
+    def analyze_html(
+        self, html: Optional[bytes] = None, *, file: Optional[str] = None
+    ) -> Dict[str, List[str]]:
+        """
+        Analyze HTML from file or provided variable
+        :param html: HTML content
+        :param file: File with HTML content
+        :return: Dictionary of technologies
+        """
+        if file:
+            with open(file, "rb") as f:
+                html = f.read()
+
+        if not html and not file:
+            raise NoArgsException("Provide html or file argument to function")
+
+        result = TechnologiesProcessor.analyze_html(
+            html=html, technologies=self.technologies, categories=self.categories  # type: ignore
+        )
+        return result
 
     def use_latest(self) -> None:
         """

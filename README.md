@@ -47,6 +47,36 @@ print(data)
 >>> {'Web servers': ['Nginx'], 'Reverse proxies': ['Nginx'], 'Caching': ['Varnish'], 
 >>>  'Analytics': ['Google Analytics'], 'JavaScript libraries': ['jQuery UI', 'Modernizr', 'jQuery']}
 ```
+Analyze your HTML or HTML file. \
+Using of this method can't give you 100% of technologies. So if you want get all technologies, 
+please use the default methods as `.analyze()`
+```python
+import requests
+from pywappalyzer import Pywappalyzer
+
+
+wappalyzer = Pywappalyzer()
+response = requests.get("https://python.org/")
+
+data = wappalyzer.analyze_html(response.content)
+print(data)
+
+>>> {'Analytics': ['Google Analytics'], 'JavaScript libraries': ['Modernizr', 'jQuery UI', 'jQuery']}
+```
+Analyze HTML file
+```python
+import requests
+from pywappalyzer import Pywappalyzer
+
+
+wappalyzer = Pywappalyzer()
+response = requests.get("https://python.org/")
+
+data = wappalyzer.analyze_html(file="path_to_file")
+print(data)
+
+>>> {'Analytics': ['Google Analytics'], 'JavaScript libraries': ['Modernizr', 'jQuery UI', 'jQuery']}
+```
 Pywappalyzer uses selenium's `webdriver.Firefox` driver. For using `webdriver.Chrome` you need to write your own class
 ```python
 from typing import Optional, Union
