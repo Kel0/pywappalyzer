@@ -7,6 +7,6 @@ steps:
     image: python:3.7
     commands:
       - pip install invoke
-      - inv install
+      - pip install -r requirements.txt
       - inv check
       - inv test

@@ -1,77 +1,78 @@
+from dataclasses import dataclass
+from unittest.mock import Mock
+
 import pytest
 
 from pywappalyzer.wappalyzer import Pywappalyzer
 
 
+@dataclass
+class Site:
+    headers: dict
+
+
 @pytest.fixture
-def wappalyzer():
+def pywappalyzer():
     return Pywappalyzer()
 
 
 @pytest.fixture
-def mock_scrape_technologies_to_json(mocker):
-    mock_scrape_technologies_to_json = mocker.patch(
-        "pywappalyzer.wappalyzer.scrape_technologies_to_json"
-    )
-    mock_scrape_technologies_to_json.return_value = None
-    return mock_scrape_technologies_to_json
+def mock_site(mocker):
+    mock_site = mocker.patch("pywappalyzer.wappalyzer.Site")
+    mock_site.return_value = Site(headers={})
+    return mock_site
 
 
 @pytest.fixture
-def mock_scrape_technologies(mocker):
-    mock_scrape_technologies = mocker.patch(
-        "pywappalyzer.wappalyzer.scrape_technologies"
+def mock_open(mocker):
+    mock_open = mocker.patch("builtins.open")
+    mock_open.return_value.truncate.return_value = None
+    return mock_open
+
+
+@pytest.fixture
+def mock_json(mocker):
+    mock_json = mocker.patch("pywappalyzer.wappalyzer.json")
+    mock_json.dump.return_value = None
+    return mock_json
+
+
+@pytest.fixture
+def mock_requests_get():
+    mock_requests_get = Mock()
+    mock_requests_get.json.return_value = {"categories": {}, "technologies": {}}
+    return mock_requests_get
+
+
+@pytest.fixture
+def mock_requests(mocker, mock_requests_get):
+    mock_requests = mocker.patch("pywappalyzer.wappalyzer.requests")
+    mock_requests.get.return_value = mock_requests_get
+    return mock_requests_get
+
+
+@pytest.fixture
+def mock_technologies_processor(mocker, helpers):
+    mock_technologies_processor = mocker.patch(
+        "pywappalyzer.wappalyzer.TechnologiesProcessor"
     )
-    mock_scrape_technologies.return_value = {
-        "technologies": {
-            "Structured\xa0Data": ["Microdata", "JSON-LD"],
-            "Site\xa0Elements": [
-                "IPv6",
-                "HTTP Strict Transport Security",
-                "QUIC",
-                "HTTP/2",
-                "HTTP/3",
-                "Default subdomain www",
-                "Default protocol https",
-            ],
-            "Client-side\xa0Languages": ["JavaScript", "Flash"],
-            "SSL\xa0Certificate\xa0Authorities": ["GlobalSign"],
-            "Web\xa0Servers": ["Google Servers"],
-            "Image\xa0File\xa0Formats": ["PNG", "SVG", "JPEG", "WebP"],
-            "DNS\xa0Servers": ["Google"],
-            "Advertising\xa0Networks": ["Google Ads"],
-            "Traffic\xa0Analysis\xa0Tools": ["Google Analytics"],
-        },
-        "url": "https://w3techs.com/sitesinfo?url=https://google.com",
+    mock_technologies_processor.return_value.analyze.return_value = (
+        helpers.result_analyze_msg()
+    )
+    return mock_technologies_processor
+
+
+def test_analyze(pywappalyzer, mock_site, mock_technologies_processor):
+    result = pywappalyzer.analyze(url="https://python.org/")
+    assert result == {
+        "Web frameworks": ["Laravel"],
+        "Web servers": ["Nginx"],
+        "Reverse proxies": ["Nginx"],
+        "Caching": ["Varnish"],
+        "Analytics": ["Google Analytics"],
+        "JavaScript libraries": ["jQuery", "jQuery UI", "Modernizr"],
     }
-    return mock_scrape_technologies
 
 
-def test_use_latest(wappalyzer: Pywappalyzer, mock_scrape_technologies_to_json):
-    assert wappalyzer.use_latest() is None  # type: ignore
-
-
-def test_analyze(wappalyzer: Pywappalyzer, mock_scrape_technologies):
-    data = wappalyzer.analyze(url="https://google.com")
-    assert data == {
-        "technologies": {
-            "Structured\xa0Data": ["Microdata", "JSON-LD"],
-            "Site\xa0Elements": [
-                "IPv6",
-                "HTTP Strict Transport Security",
-                "QUIC",
-                "HTTP/2",
-                "HTTP/3",
-                "Default subdomain www",
-                "Default protocol https",
-            ],
-            "Client-side\xa0Languages": ["JavaScript", "Flash"],
-            "SSL\xa0Certificate\xa0Authorities": ["GlobalSign"],
-            "Web\xa0Servers": ["Google Servers"],
-            "Image\xa0File\xa0Formats": ["PNG", "SVG", "JPEG", "WebP"],
-            "DNS\xa0Servers": ["Google"],
-            "Advertising\xa0Networks": ["Google Ads"],
-            "Traffic\xa0Analysis\xa0Tools": ["Google Analytics"],
-        },
-        "url": "https://w3techs.com/sitesinfo?url=https://google.com",
-    }
+def test_use_latest(pywappalyzer, mock_json, mock_open, mock_requests):
+    pywappalyzer.use_latest()

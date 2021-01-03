@@ -13,6 +13,7 @@ coverage==5.3
 cryptography==3.2.1
 docutils==0.16
 flake8==3.8.4
+geckodriver-autoinstaller==0.1.0
 idna==2.10
 importlib-metadata==2.0.0
 iniconfig==1.1.1
