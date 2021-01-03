@@ -1,9 +1,6 @@
-import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List
-
-import requests
+from typing import Any, Dict, List, Optional
 
 from .exceptions import NoArgsException
 from .utils import Site, TechnologiesProcessor, read_json
@@ -17,7 +14,6 @@ class Pywappalyzer:
             str(os.path.join(ABS_PATH, "db/technologies.json"))
         )
         self.categories = read_json(str(os.path.join(ABS_PATH, "db/categories.json")))
-        self.technologies_link = "https://raw.githubusercontent.com/AliasIO/wappalyzer/master/src/technologies.json"
 
     def analyze(self, url: str) -> Dict[str, List[str]]:
         """
@@ -40,18 +36,30 @@ class Pywappalyzer:
 
         return processor.analyze()
 
-    def use_latest(self) -> None:
+    def analyze_html(
+        self, html: Optional[bytes] = None, *, file: Optional[str] = None
+    ) -> Dict[str, List[str]]:
         """
-        Update technologies/categories json
-        :return:
+        Analyze HTML from file or provided variable
+        :param html: HTML content
+        :param file: File with HTML content
+        :return: Dictionary of technologies
         """
-        response = requests.get(self.technologies_link)
-        items = response.json()
+        if file:
+            with open(file, "rb") as f:
+                html = f.read()
 
-        with open(os.path.join(ABS_PATH, "db/categories.json"), "w+") as f:
-            f.truncate()
-            json.dump(items["categories"], f, ensure_ascii=False, indent=4)
+        if not html and not file:
+            raise NoArgsException("Provide html or file argument to function")
 
-        with open(os.path.join(ABS_PATH, "db/technologies.json"), "w+") as f:
-            f.truncate()
-            json.dump(items["technologies"], f, ensure_ascii=False, indent=4)
+        result = TechnologiesProcessor.analyze_html(
+            html=html, technologies=self.technologies, categories=self.categories  # type: ignore
+        )
+        return result
+
+    def use(self, technologies: dict) -> None:
+        """
+        Use provided technologies/categories json
+        """
+        self.technologies = technologies["technologies"]
+        self.categories = technologies["categories"]

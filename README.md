@@ -33,19 +33,54 @@ print(data)
 >>> {'Web servers': ['Nginx'], 'Reverse proxies': ['Nginx'], 'Caching': ['Varnish'], 
 >>>  'Analytics': ['Google Analytics'], 'JavaScript libraries': ['jQuery UI', 'Modernizr', 'jQuery']
 ```
-Update technologies json list which use for identifying of technologies
+Update technologies json list which use for identifying of technologies. [Origin file](https://raw.githubusercontent.com/AliasIO/wappalyzer/master/src/technologies.json)
 ```python
+import json
+
 from pywappalyzer import Pywappalyzer
 
 
-wappalyzer = Pywappalyzer()
+with open("path_to_file.json", "w") as f:
+    technologies = json.load(f)
 
-wappalyzer.use_latest()  # call this method only once, for update the file
+wappalyzer = Pywappalyzer()
+wappalyzer.use(technologies=technologies)  # method for replace default `technologies` and `categories` dictionaries
+
 data = wappalyzer.analyze(url="https://www.python.org/")
 print(data)
 
 >>> {'Web servers': ['Nginx'], 'Reverse proxies': ['Nginx'], 'Caching': ['Varnish'], 
 >>>  'Analytics': ['Google Analytics'], 'JavaScript libraries': ['jQuery UI', 'Modernizr', 'jQuery']}
+```
+Analyze your HTML or HTML file. \
+Using of this method can't give you 100% of technologies. So if you want get all technologies, 
+please use the default methods as `.analyze()`
+```python
+import requests
+from pywappalyzer import Pywappalyzer
+
+
+wappalyzer = Pywappalyzer()
+response = requests.get("https://python.org/")
+
+data = wappalyzer.analyze_html(response.content)
+print(data)
+
+>>> {'Analytics': ['Google Analytics'], 'JavaScript libraries': ['Modernizr', 'jQuery UI', 'jQuery']}
+```
+Analyze HTML file
+```python
+import requests
+from pywappalyzer import Pywappalyzer
+
+
+wappalyzer = Pywappalyzer()
+response = requests.get("https://python.org/")
+
+data = wappalyzer.analyze_html(file="path_to_file")
+print(data)
+
+>>> {'Analytics': ['Google Analytics'], 'JavaScript libraries': ['Modernizr', 'jQuery UI', 'jQuery']}
 ```
 Pywappalyzer uses selenium's `webdriver.Firefox` driver. For using `webdriver.Chrome` you need to write your own class
 ```python
@@ -85,34 +120,6 @@ class MySite(Site):
         return page_source.encode("utf-8")
 ```
 
-# CONTRIBUTING
-To contribute to the code, suppose you are working on Issue Ticket #34, you’ll need to create a new local branch named “feature/34”
-
-git checkout -b "feature/34"
-
-Now once you have made all changes,
-```commandline
-inv format (To format all the files according to Python standards)
-```
-```commandline
-inv check (To check formatting once again)
-```
-```commandline
-inv test (to run tests)
-```
-```commandline
-git add .
-```
-```commandline
-git commit -m "#34 <commit message>"
-```
-Example: ```git commit -m "#34 Add support for feature X"```
-```commandline
-git push --set-upstream origin feature/34
-```
-Now, your changes would have been pushed online to the new branch “feature/34”.
-
-After this, you need to go to your branch online and create a Pull Request to merge the branch “feature/34” with “master”.
-
-Once the Pull Request is approved after code review, you can merge the Pull Request. :-)
+# Credits
+https://github.com/AliasIO/wappalyzer - Wappalyzer
 

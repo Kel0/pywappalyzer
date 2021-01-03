@@ -128,3 +128,17 @@ def test_technologies_processor_analyze(technologies_processor, helpers):
     assert helpers.sort_dict_lists(result) == helpers.sort_dict_lists(
         helpers.result_analyze_msg()
     )
+
+
+def test_analyze_html(helpers):
+    result = TechnologiesProcessor.analyze_html(
+        html=helpers.read_txt(filename="samples/example_html.txt", as_bytes=True),
+        technologies=helpers.read_json("samples/example_technologies.json"),
+        categories=helpers.read_json("samples/example_categories.json"),
+    )
+    assert helpers.sort_dict_lists(result) == helpers.sort_dict_lists(
+        {
+            "Analytics": ["Google Analytics"],
+            "JavaScript libraries": ["Modernizr", "jQuery UI", "jQuery"],
+        }
+    )

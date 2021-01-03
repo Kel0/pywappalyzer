@@ -74,5 +74,21 @@ def test_analyze(pywappalyzer, mock_site, mock_technologies_processor):
     }
 
 
-def test_use_latest(pywappalyzer, mock_json, mock_open, mock_requests):
-    pywappalyzer.use_latest()
+def test_analyze_html(pywappalyzer, helpers):
+    html = helpers.read_txt("samples/example_html.txt", as_bytes=True)
+    result = pywappalyzer.analyze_html(html=html)
+    assert helpers.sort_dict_lists(result) == helpers.sort_dict_lists(
+        {
+            "Analytics": ["Google Analytics"],
+            "JavaScript libraries": ["Modernizr", "jQuery UI", "jQuery"],
+        }
+    )
+
+
+def test_use_latest(pywappalyzer, helpers):
+    pywappalyzer.use(
+        technologies={
+            "technologies": helpers.read_json("samples/example_technologies.json"),
+            "categories": helpers.read_json("samples/example_categories.json"),
+        }
+    )

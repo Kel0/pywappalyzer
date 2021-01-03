@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pywappalyzer",
-    version="0.1.0",
+    version="0.1.1",
     author="Kel0",
     author_email="rozovdima123@gmail.com",
     description="Easy identify site's technologies.json",

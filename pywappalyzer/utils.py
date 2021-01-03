@@ -60,36 +60,36 @@ class Site:
     Site interface for easy interacting with HTML/Headers etc.
     """
 
-    def __init__(self, url: str, headers: Optional[Dict[str, Any]] = None) -> None:
-        self.headers = headers
-        if headers is None:
-            self.headers = {
-                "accept": "*/*",
-                "user-agent": (
-                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
-                ),
+    def __init__(
+        self, url: str, static: bool = False, headers: Optional[Dict[str, Any]] = None
+    ) -> None:
+        if not static:
+            self.headers = headers
+            if headers is None:
+                self.headers = {
+                    "accept": "*/*",
+                    "user-agent": (
+                        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
+                    ),
+                }
+
+            self.url = url
+            self.js: Dict[str, Dict[str, bool]] = {}
+            self.html = self.get_html()
+            self.meta = {
+                "html": self.html,
+                "js": self.js,
+                "headers": self.get_headers(),
+                "host": self.get_host(),
+                "styles": self.get_styles(),
+                "scripts": self.get_scripts(),
             }
 
-        self.url = url
-        self.js: Dict[str, Dict[str, bool]] = {}
-        self.html = self.get_html()
-        self.meta = {
-            "html": self.html,
-            "js": self.js,
-            "headers": self.get_headers(),
-            "host": self.get_host(),
-            "styles": self.get_styles(),
-            "scripts": self.get_scripts(),
-        }
-
-    def get_html(
-        self, url: Optional[str] = None, *, as_text: bool = False
-    ) -> Union[bytes, str]:  # pragma: no cover
+    def get_html(self, url: Optional[str] = None) -> bytes:  # pragma: no cover
         """
         Scrape site's html
         :param url: Site's url
-        :param as_text: Return html as string
         :return: Site's HTML as bytes or string
         """
         if url is None:
@@ -102,8 +102,6 @@ class Site:
             page_source = driver.page_source
             self.handle_js(driver)
 
-        if as_text:
-            return page_source
         return page_source.encode("utf-8")
 
     def handle_js(
@@ -155,7 +153,10 @@ class Site:
         return response.headers
 
     def _get_elements(
-        self, tag: str, attrs: Optional[Dict[str, str]] = None
+        self,
+        tag: str,
+        attrs: Optional[Dict[str, str]] = None,
+        html: Optional[bytes] = None,
     ) -> ResultSet:
         """
         Parse tags from site's html
@@ -166,16 +167,21 @@ class Site:
         if attrs is None:
             attrs = {}
 
-        soup = bs(self.html, "lxml")
+        soup = bs(html, "lxml")
         elements = soup.find_all(tag, attrs=attrs)
         return elements
 
-    def get_styles(self) -> list:
+    def get_styles(self, html: Optional[bytes] = None) -> list:
         """
         Get tags with "link" naming
         :return: List of tag elements
         """
-        result = self._get_elements(tag="link") + self._get_elements(tag="style")
+        if html is None:
+            html = self.html
+
+        result = self._get_elements(tag="link", html=html) + self._get_elements(
+            tag="style", html=html
+        )
         return result
 
     def get_host(self, url: Optional[str] = None) -> str:
@@ -189,12 +195,15 @@ class Site:
 
         return urlparse(url).netloc
 
-    def get_scripts(self) -> ResultSet:
+    def get_scripts(self, html: Optional[bytes] = None) -> ResultSet:
         """
         Get tags with "script" naming
         :return: List of tag elements
         """
-        return self._get_elements(tag="script")
+        if html is None:
+            html = self.html
+
+        return self._get_elements(tag="script", html=html)
 
 
 class TechnologiesProcessor:
@@ -215,6 +224,43 @@ class TechnologiesProcessor:
         self.categories = categories
         self.technologies_keys = self.technologies.keys()
 
+    @staticmethod
+    def analyze_html(
+        html: bytes, technologies: dict, categories: dict
+    ) -> Dict[str, List[str]]:
+        """
+        Analyze HTML for technologies
+        :param html: HTML content
+        :param technologies: Technologies dictionary
+        :param categories: Categories dictionary
+        :return: Technologies dictionary
+        """
+        site = Site(url="", static=True)
+        site.meta = {
+            "html": "".encode(),
+            "js": {},
+            "headers": {},
+            "host": "",
+            "styles": [],
+            "scripts": [],
+        }
+        styles = site.get_styles(html=html)
+        scripts = site.get_scripts(html=html)
+
+        site.meta["styles"] = styles
+        site.meta["scripts"] = scripts
+
+        processor = TechnologiesProcessor(
+            headers={}, site=site, technologies=technologies, categories=categories
+        )
+        _styles = processor.analyze_styles()
+        _scripts = processor.analyze_scripts()
+
+        techs = {
+            key: list(set(value)) for key, value in {**_styles, **_scripts}.items()
+        }
+        return techs
+
     def analyze_headers(self) -> Dict[str, List[str]]:
         """
         Analyze response headers
@@ -234,14 +280,14 @@ class TechnologiesProcessor:
                 response_cookie = parse_cookie(headers["Set-Cookie"])
 
                 for cookie_key in cookie_keys:
-                    if cookie_key in response_cookie:
-                        for cat in technology["cats"]:
-                            if result.get(self.categories[str(cat)]["name"]) is None:
-                                result[self.categories[str(cat)]["name"]] = []
+                    if cookie_key not in response_cookie:
+                        continue
 
-                            result[self.categories[str(cat)]["name"]].append(
-                                technology_key
-                            )
+                    for cat in technology["cats"]:
+                        if result.get(self.categories[str(cat)]["name"]) is None:
+                            result[self.categories[str(cat)]["name"]] = []
+
+                        result[self.categories[str(cat)]["name"]].append(technology_key)
 
             if meta is None:
                 continue
@@ -285,6 +331,7 @@ class TechnologiesProcessor:
             for style in styles:
                 for pattern in patterns:
                     _pattern = resolve_pattern(pattern=pattern)
+
                     try:
                         match = re.findall(_pattern, " ".join(str(style).split()), re.I)
                     except re.error:
